@@ -1,0 +1,21 @@
+Package: tidygm
+Title: Music as Tidy Data Frames
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Antoine",
+           family = "Fabri",
+           role = c("aut", "cre"),
+           email = "antoine.fabri@gmail.com")
+Description: A wrapper around the 'gm' package to manipulate and play music using tidy data frames.
+License: GPL3
+Encoding: UTF-8
+Language: en
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports: 
+    purrr,
+    dplyr,
+    tidyr,
+    magrittr,
+    data.table

@@ -1,0 +1,206 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# tidygm
+
+Can we build and play music by manipulating tidy data frames ?
+
+The {gm} package by Renfei Mao is young and promising, this package is a wrapper of {gm} where
+I play with some ideas. You'll need to install {gm} first.
+
+Install with
+
+```r
+remotes::install_github("moodymudskipper/tidygm")
+```
+
+I'll illustrate {tidygm} by recreating a version of Coldplay's song "Clocks".
+I followed this great breakdown of the song by Rick Beato :
+
+https://www.youtube.com/watch?v=7_warUFthJI&ab_channel=RickBeato
+
+## 1st bar
+
+```{r}
+library(tidygm)
+library(magrittr, include.only = "%>%")
+```
+
+
+The first bar of "Clocks" is a piano line that goes : 
+
+> Eb6, Bb5, G5, Eb6, Bb5, G5, Eb6, Bb5
+
+Let's make a song out of it using the function `new_song`, which creates a tidy data frame, and `play` which plays it. 
+
+* The song is in F minor, the tempo is 129 bpm
+* The meter is 4/4 (which is the default for `new_song`)
+* We don't provide a `durations` argument so `new_song` will guess these are all eighth notes
+* The default instrument is "piano" (at the moment it is the only instrument
+supported by {gm} but this should hopefully change with the next minor release).
+
+```{r}
+piano_1 <- list("E-6", "B-5", "G5", "E-6", "B-5", "G5", "E-6", "B-5")
+song <- new_song(list(piano_1), key = "Fm", tempo = 129)
+song
+
+play(song)
+```
+
+## 2nd bar
+
+This worked well! let's write two bars in one go now :
+
+```{r}
+piano_2 <- list("C#6", "A#5", "F5", "C#6", "A#5", "F5", "C#6", "A#5")
+song <- new_song(list(piano_1, piano_2), key = "Fm", tempo = 129)
+song
+
+play(song)
+```
+
+## 3rd bar
+
+We don't want to build the object from scratch every time, so we provide utilities
+to build our song data frame as we go.
+
+The 3rd is the same as the 2nd, so we copy and paste it :
+
+```{r}
+song <- song %>% copy_and_paste(bar_id == 2)
+song
+
+play(song)
+```
+
+`copy_and_paste` has additional arguments `subset_to`, to indicate where to paste
+(to overwrite values), and `what` to indicate what to paste, but if left empty
+as done here we just copy everything to the end, with new values of `bar_id`.
+
+## 4th bar
+
+The 4th bar is different, since we cannot copy and paste it, we add
+a new bar using `add_bars()`
+
+```{r}
+piano_4 <- list("C6", "A-5", "F5", "C6", "A-5", "F5", "C6", "A-5")
+song <- add_bars(song, list(piano_4))
+song
+
+play(song)
+```
+
+## repeat it all
+
+The full sequence is then repeated to complete the piano intro.
+
+```{r}
+song <- copy_and_paste(song, bar_id %in% 1:4)
+song
+
+play(song)
+```
+
+## and repeat it all again
+
+The intro is then played again, but this time we'll add other instruments on top,
+let's copy 4 additional bars only for now.
+
+```{r}
+song <- copy_and_paste(song, bar_id %in% 1:4)
+song
+
+play(song)
+```
+
+
+except instruments are added on top.
+
+## add the bass
+
+We add the bass at bars 9 to 12, we use the function `add_bars()` again
+but with the `at` argument this time since we're not appending to the end.
+
+The base line is very simple, we repeat for each bar an eighth note 8 times.
+
+```{r}
+bass_bars <- list(
+  replicate(8, "D#3",  F),
+  replicate(8, "A#2",  F), 
+  replicate(8, "A#2",  F), 
+  replicate(8, "F3" ,  F))
+  
+song <- add_bars(
+  song, 
+  pitches = bass_bars,
+  instrument = "bass",
+  at = 9:12)
+
+song
+
+play(song)
+```
+
+## add the guitar
+
+On top of the bass a guitar is joining, the process is similar but now we show
+how we deal with simultaneous notes (chords)
+
+```{r}
+guitar_bars <- list(
+  replicate(8, c("G4","A#4", "D#5", "G5"), F),
+  replicate(8, c("F4","A#4"), F),
+  replicate(8, c("F4","A#4", "C#4"), F),
+  replicate(8, c("G#4","C5", "D#5", "D#5"), F))
+  
+song <- add_bars(
+  song, 
+  pitches = guitar_bars,
+  instrument = "guitar",
+  at = 9:12)
+
+song
+
+play(song)
+```
+
+## finish the intro
+
+Repeat the last 4 bars, with all instruments
+
+```{r}
+song <- copy_and_paste(song, bar_id %in% 9:12)
+song
+
+play(song)
+```
+
+## The end
+
+We won't finish the song, but we have some building blocks we'd be able to reuse already.
+
+{gm} has some limitations at the moment, and {tidygm} has more, but I see potential
+in a tidy approach, it would be very easy for instance to filter out an instrument
+from the mix here, or to shift the pitches up or down with appropriate functions.
+
+I'm also interested in playing with modes and backward melodies to do automatically things like :
+
+* https://www.youtube.com/watch?v=eGsthz78Ajo&ab_channel=Shred
+
+* https://www.youtube.com/watch?v=gj4JnOZ2Ees&ab_channel=Shred
+
+* https://www.youtube.com/watch?v=Sptr5yS5gAM&ab_channel=SteveCruickshank
+
+I'm not sure if I'll move along with {tidygm} but thought I'd at least get the idea
+out there.
+
