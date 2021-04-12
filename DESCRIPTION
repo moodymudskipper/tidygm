@@ -19,3 +19,5 @@ Imports:
     tidyr,
     magrittr,
     data.table
+URL: https://github.com/moodymudskipper/tidygm
+BugReports: https://github.com/moodymudskipper/tidygm/issues
